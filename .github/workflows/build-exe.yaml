@@ -4,18 +4,18 @@ name: Build Windows EXE
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:  # 수동 실행 가능
 
 jobs:
   build:
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
@@ -26,10 +26,57 @@ jobs:
     
     - name: Build executable
       run: |
-        pyinstaller --onefile --windowed --name="HWP-PDF변환기" --icon=icon.ico hwp_converter.py
+        pyinstaller --onefile --windowed --name="HWP-PDF변환기" main.py
     
-    - name: Upload artifact
-      uses: actions/upload-artifact@v3
+    - name: Create release files
+      run: |
+        mkdir release
+        copy "dist\HWP-PDF변환기.exe" "release\"
+        echo "HWP to PDF 변환기 v1.0" > release\README.txt
+        echo. >> release\README.txt
+        echo "사용법:" >> release\README.txt
+        echo "1. HWP-PDF변환기.exe 실행" >> release\README.txt
+        echo "2. HWP 파일 선택" >> release\README.txt
+        echo "3. 변환 시작" >> release\README.txt
+        echo. >> release\README.txt
+        echo "주의: 한글 프로그램이 설치되어 있어야 합니다." >> release\README.txt
+      shell: cmd
+    
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
       with:
-        name: hwp-pdf-converter
-        path: dist/HWP-PDF변환기.exe
+        name: hwp-pdf-converter-v1.0
+        path: release/
+        retention-days: 30
+    
+    - name: Create Release (on tag push)
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: release/*
+        body: |
+          ## HWP to PDF 변환기
+          
+          ### 🚀 기능
+          - HWP 파일을 PDF로 일괄 변환
+          - 사용자 친화적 GUI
+          - 실시간 진행률 표시
+          - 안정적인 오류 처리
+          
+          ### 📋 시스템 요구사항
+          - Windows 10/11
+          - 한글과컴퓨터 "한글" 프로그램
+          
+          ### 📖 사용법
+          1. `HWP-PDF변환기.exe` 실행
+          2. HWP 파일들 선택
+          3. 출력 폴더 지정 (선택사항)
+          4. 변환 시작
+          
+          ### ⚠️ 주의사항
+          - 한글 프로그램이 설치되어 있어야 합니다
+          - 변환 중에는 한글 프로그램이 자동으로 실행됩니다
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -26,7 +26,7 @@ jobs:
     
     - name: Build executable
       run: |
-        pyinstaller --onefile --windowed --name="HWP-PDF변환기" main.py
+        pyinstaller --onefile --windowed --name="HWP-PDF변환기" --hidden-import=tkinter --hidden-import=tkinter.messagebox --hidden-import=tkinter.filedialog --hidden-import=win32com.client --hidden-import=pythoncom main.py
     
     - name: Create release files
       run: |

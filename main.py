@@ -45,29 +45,41 @@ class HWPToPDFConverter:
         
     def check_system_requirements(self):
         """시스템 요구사항을 확인합니다."""
-        if not WINDOWS_AVAILABLE:
-            messagebox.showerror(
-                "시스템 오류", 
-                "이 프로그램은 Windows에서만 실행할 수 있습니다.\n"
-                "또한 필요한 시스템 구성요소가 설치되지 않았습니다."
-            )
-            self.root.destroy()
-            return False
-            
-        # 한글 프로그램 설치 확인
-        if not self.check_hwp_installed():
-            result = messagebox.askyesno(
-                "한글 프로그램 필요", 
-                "한글과컴퓨터의 '한글' 프로그램이 설치되어 있지 않거나\n"
-                "정상적으로 작동하지 않습니다.\n\n"
-                "한글 프로그램 없이는 HWP 파일을 변환할 수 없습니다.\n"
-                "그래도 프로그램을 계속 실행하시겠습니까?"
-            )
-            if not result:
+        try:
+            if not WINDOWS_AVAILABLE:
+                messagebox.showerror(
+                    "시스템 오류", 
+                    "이 프로그램은 Windows에서만 실행할 수 있습니다.\n"
+                    "또한 필요한 시스템 구성요소가 설치되지 않았습니다."
+                )
                 self.root.destroy()
                 return False
                 
-        return True
+            # 한글 프로그램 설치 확인
+            if not self.check_hwp_installed():
+                result = messagebox.askyesno(
+                    "한글 프로그램 필요", 
+                    "한글과컴퓨터의 '한글' 프로그램이 설치되어 있지 않거나\n"
+                    "정상적으로 작동하지 않습니다.\n\n"
+                    "한글 프로그램 없이는 HWP 파일을 변환할 수 없습니다.\n"
+                    "그래도 프로그램을 계속 실행하시겠습니까?"
+                )
+                if not result:
+                    self.root.destroy()
+                    return False
+                    
+            return True
+            
+        except Exception as e:
+            try:
+                messagebox.showerror("초기화 오류", f"프로그램 초기화 중 오류가 발생했습니다:\n{str(e)}")
+            except:
+                pass
+            try:
+                self.root.destroy()
+            except:
+                pass
+            return False
     
     def check_hwp_installed(self):
         """한글 프로그램 설치 여부를 확인합니다."""
@@ -477,32 +489,45 @@ class HWPToPDFConverter:
 
 def main():
     """메인 함수"""
-    # Windows 환경 체크
-    if not WINDOWS_AVAILABLE:
-        import tkinter as tk
-        root = tk.Tk()
-        root.withdraw()  # 메인 창 숨기기
-        messagebox.showerror(
-            "시스템 오류", 
-            "이 프로그램은 Windows에서만 실행할 수 있습니다.\n"
-            "또한 다음 구성요소가 필요합니다:\n"
-            "- 한글과컴퓨터 '한글' 프로그램\n"
-            "- Windows COM 지원"
-        )
-        return
-    
     try:
+        # Windows 환경 체크
+        if not WINDOWS_AVAILABLE:
+            root = tk.Tk()
+            root.withdraw()  # 메인 창 숨기기
+            messagebox.showerror(
+                "시스템 오류", 
+                "이 프로그램은 Windows에서만 실행할 수 있습니다.\n"
+                "또한 다음 구성요소가 필요합니다:\n"
+                "- 한글과컴퓨터 '한글' 프로그램\n"
+                "- Windows COM 지원"
+            )
+            root.destroy()
+            return
+        
+        # Tkinter 루트 생성
         root = tk.Tk()
+        
+        # 앱 인스턴스 생성
         app = HWPToPDFConverter(root)
         
-        # 프로그램이 정상적으로 초기화되었다면 메인 루프 실행
-        if not app.root.winfo_exists():
-            return
+        # 메인 루프 실행 (app 초기화가 성공한 경우에만)
+        try:
+            if root.winfo_exists():
+                root.mainloop()
+        except tk.TclError:
+            pass  # 창이 이미 닫힌 경우
             
-        root.mainloop()
-        
     except Exception as e:
-        messagebox.showerror("실행 오류", f"프로그램 실행 중 오류가 발생했습니다:\n{str(e)}")
+        try:
+            # 오류 창 표시
+            error_root = tk.Tk()
+            error_root.withdraw()
+            messagebox.showerror("실행 오류", f"프로그램 실행 중 오류가 발생했습니다:\n{str(e)}")
+            error_root.destroy()
+        except:
+            # Tkinter도 사용할 수 없는 경우
+            print(f"오류: {str(e)}")
+        return
 
 if __name__ == "__main__":
     main()
